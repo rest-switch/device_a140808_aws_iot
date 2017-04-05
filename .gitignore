@@ -1,8 +1,9 @@
+*.DS_Store
 *.o
 *.cer
 *.pem
-*.DS_Store
 files/host.cfg
 avr/tools
 bin
 minipro
+source-lede-17.01

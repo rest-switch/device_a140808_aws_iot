@@ -1,5 +1,5 @@
 #
-# Copyright 2015 The REST Switch Authors
+# Copyright 2015-2017 The REST Switch Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,26 +18,23 @@
 
 
 OUTBIN           := bin
-CFG_DIFF         := patches/diffconfig
+CFG_DIFF         := patches/diff_config
 PATCHES          := $(sort $(wildcard patches/*.patch))
 UBOOT            := firmware/hlk-rm04_uboot-50000.bin
 MAC              := $(strip $(mac))
 MAC2BIN          := $(OUTBIN)/mac2bin
 SERNUM           := $(OUTBIN)/serialnum
+MINIPRO          := $(OUTBIN)/minipro
+MINIPRO_SRC_URL  := https://github.com/inindev/minipro/archive/master.tar.gz
 TARGET           := $(OUTBIN)/openwrt-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
-LEDE_ROOT        := lede-project
-LEDE_SRC_URL     := https://github.com/lede-project/source/archive/master.tar.gz
+LEDE_ROOT        := source-lede-17.01
+LEDE_SRC_URL     := https://github.com/lede-project/source/archive/lede-17.01.tar.gz
 LEDE_FEEDS       := $(LEDE_ROOT)/feeds
-LEDE_VER         := $(shell echo $$(($$(wget -q -O- https://api.github.com/repos/lede-project/source/commits\?since\=2016-07-16T00:00:00Z | grep \"commit\":\ { | wc -l) + 1003)))
+LEDE_VER         := 17.01
 LEDE_CFG         := $(LEDE_ROOT)/.config
-LEDE_CACERT_SRC  := ca*certs/*_ca_public.cer
-LEDE_CACERT_TGT  := $(LEDE_ROOT)/package/utils/a140808/files
-LEDE_TGT         := $(LEDE_ROOT)/bin/targets/ramips/rt305x/openwrt-$(shell cat "$(LEDE_ROOT)/version")-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
+#LEDE_TGT         := $(LEDE_ROOT)/bin/targets/ramips/rt305x/openwrt-$(shell cat "$(LEDE_ROOT)/version")-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
 SSH_TOOL         := tools/scripts/ssh_access.sh
 FLASH_TOOL       := tools/scripts/program_flash.py
-MINIPRO_ROOT     := tools/minipro
-MINIPRO          := $(MINIPRO_ROOT)/minipro
-MINIPRO_SRC_URL  := https://github.com/inindev/minipro/archive/master.tar.gz
 MAC1A_ADDR       := $(shell echo -n $$((0x40004)))
 MAC1B_ADDR       := $(shell echo -n $$((0x40028)))
 MAC2_ADDR        := $(shell echo -n $$((0x4002e)))
@@ -45,7 +42,7 @@ SERIAL_ADDR      := $(shell echo -n $$((0x40400)))
 
 .DEFAULT all: target
 
-target: | config cacerts ssh_check
+target: | config ssh_check
 	$(MAKE) -C "$(LEDE_ROOT)" SOURCE_DATE_EPOCH=$$(date +%s)
 	@if [ ! -d "$(OUTBIN)" ]; then mkdir "$(OUTBIN)"; fi
 	@cp "$(LEDE_TGT)" "$(TARGET)"
@@ -139,61 +136,56 @@ program: minipro
 $(LEDE_ROOT):
 	@echo
 	@echo fetching lede project...
-	rm -rf $(LEDE_ROOT) ; mkdir $(LEDE_ROOT)
-	wget -O- "$(LEDE_SRC_URL)" | tar xz -C $(LEDE_ROOT) --strip-components 1
-	echo "r$(LEDE_VER)" > "$(LEDE_ROOT)/version"
+	wget -O- "$(LEDE_SRC_URL)" | tar xz
+	echo "$(LEDE_VER)" > "$(LEDE_ROOT)/version"
+
+patch: $(LEDE_ROOT)/package/utils/a140808
+$(LEDE_ROOT)/package/utils/a140808: $(LEDE_ROOT)
+	@echo
+	@echo applying a140808 patches to lede project...
+	$(foreach patch,$(PATCHES),if patch --dry-run -N -p1 -d "$(LEDE_ROOT)" < "$(patch)" 2>&1 >/dev/null; then patch -p1 -d "$(LEDE_ROOT)" < "$(patch)"; fi;)
+	ln -sf ../../../a140808 "$(LEDE_ROOT)/package/utils/a140808"
 
 feeds: $(LEDE_FEEDS)
-$(LEDE_FEEDS): $(LEDE_ROOT)
+$(LEDE_FEEDS): patch
 	@echo
 	@echo applying feeds to lede project...
 	"$(LEDE_ROOT)/scripts/feeds" update -a
 	"$(LEDE_ROOT)/scripts/feeds" install -a
 	@rm -f "$(LEDE_CFG)" # remove .config file that the feeds gen
 
-patch: feeds
-	@echo
-	@echo applying a140808 patches to lede project...
-	$(foreach patch,$(PATCHES),if patch --dry-run -N -p1 -d "$(LEDE_ROOT)" < "$(patch)" 2>&1 >/dev/null; then patch -p1 -d "$(LEDE_ROOT)" < "$(patch)"; fi;)
-	cp -R "files/." "$(LEDE_ROOT)"
-
-cacerts: patch
-    ifneq ($(wildcard $(LEDE_CACERT_SRC)),)
-	@echo copying CA certificate files...
-	@mkdir -p "$(LEDE_CACERT_TGT)"
-	@$(foreach ca_file,$(wildcard $(LEDE_CACERT_SRC)),cp $(ca_file) "$(LEDE_CACERT_TGT)/$(basename $(notdir $(ca_file))).pem";)
-    else
-	@echo no CA certificate files present
-    endif
-
 config: $(LEDE_CFG)
-$(LEDE_CFG): patch
+$(LEDE_CFG): feeds
 	@echo
 	@echo generating lede project .config file...
 	cat "$(CFG_DIFF)" > "$(LEDE_CFG)"
 	$(MAKE) -C "$(LEDE_ROOT)" defconfig
 
+sernum: $(SERNUM)
 $(SERNUM):
 	$(MAKE) -C "tools/serialnum"
 	mv "tools/serialnum/serialnum" "$(OUTBIN)"
 
+mac2bin: $(MAC2BIN)
 $(MAC2BIN):
 	$(MAKE) -C "tools/mac2bin"
 	mv "tools/mac2bin/mac2bin" "$(OUTBIN)"
 
 minipro: $(MINIPRO)
 $(MINIPRO):
-	@if [ ! -d "$(MINIPRO_ROOT)" ]; then \
+	@if [ ! -d "tools/minipro" ]; then \
 		echo; \
 		echo "fetching minipro source...";\
-		mkdir -p "$(MINIPRO_ROOT)"; \
-		wget -O- $(MINIPRO_SRC_URL) | tar --strip-components=1 -xzvC "$(MINIPRO_ROOT)"; \
+		mkdir -p "tools/minipro"; \
+		wget -O- $(MINIPRO_SRC_URL) | tar --strip-components=1 -xzvC "tools/minipro"; \
 	fi
-	$(MAKE) -C "$(MINIPRO_ROOT)"
+	$(MAKE) -C "tools/minipro"
+	mv "tools/minipro/minipro" "$(OUTBIN)"
 
 clean distclean:
 	$(MAKE) -C "tools/serialnum" clean
 	$(MAKE) -C "tools/mac2bin" clean
+	$(MAKE) -C "tools/minipro" clean
 	@if [ -d "$(LEDE_ROOT)" ]; then $(MAKE) -C "$(LEDE_ROOT)" $@; fi
 	rm -rf "$(OUTBIN)"
 
