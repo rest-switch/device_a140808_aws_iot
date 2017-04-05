@@ -1,0 +1,11 @@
+--- a/external/aws-iot-sdk/src/aws_iot_shadow_records.c
++++ b/external/aws-iot-sdk/src/aws_iot_shadow_records.c
+@@ -80,7 +80,7 @@
+ static uint32_t tokenTableIndex = 0;
+ static bool deltaTopicSubscribedFlag = false;
+ uint32_t shadowJsonVersionNum = 0;
+-bool shadowDiscardOldDeltaFlag = true;
++bool shadowDiscardOldDeltaFlag = false;
+
+ // local helper functions
+ static void AckStatusCallback(AWS_IoT_Client *pClient, char *topicName,

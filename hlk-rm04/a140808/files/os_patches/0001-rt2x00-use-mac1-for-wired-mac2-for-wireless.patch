@@ -1,0 +1,63 @@
+From fbeb01cb7cb4c373b937da688089c8ee3f59a1e8 Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Tue, 14 Mar 2017 11:15:14 -0400
+Subject: [PATCH 1/4] rt2x00: use mac1 for wired, mac2 for wireless
+
+Signed-off-by: John Clark <inindev@gmail.com>
+---
+ .../patches/911-rt2x00-use-mac2-for-wireless.patch | 29 ++++++++++++++++++++++
+ target/linux/ramips/dts/HLKRM04.dts                |  2 +-
+ 2 files changed, 30 insertions(+), 1 deletion(-)
+ create mode 100644 package/kernel/mac80211/patches/911-rt2x00-use-mac2-for-wireless.patch
+
+diff --git a/package/kernel/mac80211/patches/911-rt2x00-use-mac2-for-wireless.patch b/package/kernel/mac80211/patches/911-rt2x00-use-mac2-for-wireless.patch
+new file mode 100644
+index 0000000..1ecb648
+--- /dev/null
++++ b/package/kernel/mac80211/patches/911-rt2x00-use-mac2-for-wireless.patch
+@@ -0,0 +1,29 @@
++index 9524564..fc2267a 100644
++--- a/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
+++++ b/drivers/net/wireless/ralink/rt2x00/rt2800lib.c
++@@ -222,9 +222,9 @@ static void rt2800_rf_write(struct rt2x00_dev *rt2x00dev,
++ static const unsigned int rt2800_eeprom_map[EEPROM_WORD_COUNT] = {
++ 	[EEPROM_CHIP_ID]		= 0x0000,
++ 	[EEPROM_VERSION]		= 0x0001,
++-	[EEPROM_MAC_ADDR_0]		= 0x0002,
++-	[EEPROM_MAC_ADDR_1]		= 0x0003,
++-	[EEPROM_MAC_ADDR_2]		= 0x0004,
+++	[EEPROM_MAC_ADDR_0]		= 0x0017,
+++	[EEPROM_MAC_ADDR_1]		= 0x0018,
+++	[EEPROM_MAC_ADDR_2]		= 0x0019,
++ 	[EEPROM_NIC_CONF0]		= 0x001a,
++ 	[EEPROM_NIC_CONF1]		= 0x001b,
++ 	[EEPROM_FREQ]			= 0x001d,
++@@ -262,9 +262,9 @@ static const unsigned int rt2800_eeprom_map[EEPROM_WORD_COUNT] = {
++ static const unsigned int rt2800_eeprom_map_ext[EEPROM_WORD_COUNT] = {
++ 	[EEPROM_CHIP_ID]		= 0x0000,
++ 	[EEPROM_VERSION]		= 0x0001,
++-	[EEPROM_MAC_ADDR_0]		= 0x0002,
++-	[EEPROM_MAC_ADDR_1]		= 0x0003,
++-	[EEPROM_MAC_ADDR_2]		= 0x0004,
+++	[EEPROM_MAC_ADDR_0]		= 0x0017,
+++	[EEPROM_MAC_ADDR_1]		= 0x0018,
+++	[EEPROM_MAC_ADDR_2]		= 0x0019,
++ 	[EEPROM_NIC_CONF0]		= 0x001a,
++ 	[EEPROM_NIC_CONF1]		= 0x001b,
++ 	[EEPROM_NIC_CONF2]		= 0x001c,
+diff --git a/target/linux/ramips/dts/HLKRM04.dts b/target/linux/ramips/dts/HLKRM04.dts
+index cbd8609..c76077e 100644
+--- a/target/linux/ramips/dts/HLKRM04.dts
++++ b/target/linux/ramips/dts/HLKRM04.dts
+@@ -109,7 +109,7 @@
+ };
+ 
+ &ethernet {
+-	mtd-mac-address = <&factory 0x4>;
++	mtd-mac-address = <&factory 0x28>;
+ };
+ 
+ &wmac {
+-- 
+2.7.4
+

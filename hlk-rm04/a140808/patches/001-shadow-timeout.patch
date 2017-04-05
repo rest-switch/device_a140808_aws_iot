@@ -1,0 +1,11 @@
+--- a/external/aws-iot-sdk/src/aws_iot_shadow_records.c
++++ b/external/aws-iot-sdk/src/aws_iot_shadow_records.c
+@@ -219,6 +219,8 @@
+ 						status = SHADOW_ACK_ACCEPTED;
+ 					} else if(strstr(topicName, "rejected") != NULL) {
+ 						status = SHADOW_ACK_REJECTED;
++					} else {
++						status = SHADOW_ACK_TIMEOUT;
+ 					}
+ 					if(status == SHADOW_ACK_ACCEPTED || status == SHADOW_ACK_REJECTED) {
+ 						if(AckWaitList[i].callback != NULL) {

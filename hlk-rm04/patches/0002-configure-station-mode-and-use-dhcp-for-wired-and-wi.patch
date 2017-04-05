@@ -1,0 +1,80 @@
+From daa81fa003ccb5c6787fb4cdb1f5e356c78e11fb Mon Sep 17 00:00:00 2001
+From: John Clark <inindev@gmail.com>
+Date: Tue, 4 Apr 2017 22:06:36 -0400
+Subject: [PATCH 2/3] configure station mode and use dhcp for wired and
+ wireless connections
+
+Signed-off-by: John Clark <inindev@gmail.com>
+---
+ package/base-files/files/etc/config/network  | 28 ++++++++++++++++++++++++++++
+ package/base-files/files/etc/config/wireless | 23 +++++++++++++++++++++++
+ 2 files changed, 51 insertions(+)
+ create mode 100644 package/base-files/files/etc/config/network
+ create mode 100644 package/base-files/files/etc/config/wireless
+
+diff --git a/package/base-files/files/etc/config/network b/package/base-files/files/etc/config/network
+new file mode 100644
+index 0000000..386cf7f
+--- /dev/null
++++ b/package/base-files/files/etc/config/network
+@@ -0,0 +1,28 @@
++
++config interface 'loopback'
++        option ifname 'lo'
++        option proto 'static'
++        option ipaddr '127.0.0.1'
++        option netmask '255.0.0.0'
++
++config interface 'lan'
++        option ifname 'eth0'
++        option proto 'dhcp'
++
++config interface 'lan6'
++        option ifname 'eth0'
++        option proto 'dhcpv6'
++
++config interface 'wan'
++        option ifname 'wlan0'
++        option proto 'dhcp'
++
++config interface 'wan6'
++        option ifname 'wlan0'
++        option proto 'dhcpv6'
++
++config switch
++        option name 'switch0'
++        option reset '1'
++        option enable_vlan '0'
++
+diff --git a/package/base-files/files/etc/config/wireless b/package/base-files/files/etc/config/wireless
+new file mode 100644
+index 0000000..abd0d48
+--- /dev/null
++++ b/package/base-files/files/etc/config/wireless
+@@ -0,0 +1,23 @@
++
++config wifi-device 'radio0'
++	option type 'mac80211'
++	option channel 'auto'
++	option hwmode '11ng'
++	option path 'platform/10180000.wmac'
++	option htmode 'HT20'
++	list ht_capab 'GF'
++	list ht_capab 'SHORT-GI-20'
++	list ht_capab 'SHORT-GI-40'
++	list ht_capab 'RX-STBC1'
++	option country 'US'
++	# REMOVE THIS LINE TO ENABLE WIFI:
++	option disabled '1'
++
++config wifi-iface
++	option device 'radio0'
++	option network 'wan'
++	option mode 'sta'
++	option ssid ''
++	option encryption 'psk2'
++	option key ''
++
+-- 
+2.7.4
+

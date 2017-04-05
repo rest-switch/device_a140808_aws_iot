@@ -1,0 +1,48 @@
+CONFIG_TARGET_ramips=y
+CONFIG_TARGET_ramips_rt305x=y
+CONFIG_TARGET_ramips_rt305x_DEVICE_hlk-rm04=y
+CONFIG_IMAGEOPT=y
+# CONFIG_IPV6 is not set
+# CONFIG_KERNEL_IPV6 is not set
+CONFIG_PACKAGE_a140808=y
+# CONFIG_PACKAGE_firewall is not set
+# CONFIG_PACKAGE_iptables is not set
+# CONFIG_PACKAGE_kmod-ipt-conntrack is not set
+# CONFIG_PACKAGE_kmod-ipt-core is not set
+# CONFIG_PACKAGE_kmod-ipt-nat is not set
+# CONFIG_PACKAGE_kmod-nf-conntrack is not set
+# CONFIG_PACKAGE_kmod-nf-ipt is not set
+# CONFIG_PACKAGE_kmod-nf-nat is not set
+CONFIG_PACKAGE_kmod-nls-base=y
+# CONFIG_PACKAGE_kmod-ppp is not set
+CONFIG_PACKAGE_kmod-usb-core=y
+CONFIG_PACKAGE_kmod-usb-ledtrig-usbport=y
+# CONFIG_PACKAGE_libip4tc is not set
+# CONFIG_PACKAGE_libip6tc is not set
+CONFIG_PACKAGE_libmbedtls=y
+CONFIG_PACKAGE_libncurses=y
+# CONFIG_PACKAGE_libpthread is not set
+CONFIG_PACKAGE_libstdcpp=y
+# CONFIG_PACKAGE_libxtables is not set
+CONFIG_PACKAGE_nano=y
+# CONFIG_PACKAGE_odhcpd is not set
+# CONFIG_PACKAGE_opkg is not set
+# CONFIG_PACKAGE_ppp is not set
+CONFIG_PACKAGE_terminfo=y
+CONFIG_PACKAGE_zlib=y
+CONFIG_SDK=y
+# CONFIG_TARGET_ROOTFS_INITRAMFS is not set
+CONFIG_VERSIONOPT=y
+CONFIG_VERSION_BUG_URL=""
+CONFIG_VERSION_CODE=""
+CONFIG_VERSION_CODE_FILENAMES=y
+CONFIG_VERSION_DIST="LEDE"
+CONFIG_VERSION_FILENAMES=y
+CONFIG_VERSION_HWREV=""
+CONFIG_VERSION_MANUFACTURER="REST Switch"
+CONFIG_VERSION_MANUFACTURER_URL="http://www.rest-switch.com"
+CONFIG_VERSION_NICK=""
+CONFIG_VERSION_NUMBER=""
+CONFIG_VERSION_PRODUCT=""
+CONFIG_VERSION_REPO="http://downloads.lede-project.org/releases/17.01.0"
+CONFIG_VERSION_SUPPORT_URL=""
