@@ -2,7 +2,7 @@
 *.o
 *.cer
 *.pem
-files/host.cfg
+host.cfg
 avr/tools
 bin
 minipro

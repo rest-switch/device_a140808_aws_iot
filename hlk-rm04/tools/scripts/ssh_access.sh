@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2016 The REST Switch Authors
+# Copyright 2015-2017 The REST Switch Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,11 +20,11 @@
 
 MYFILE=$(readlink -f "$0")
 MYDIR=$(dirname "${MYFILE}")
-OWRT_ROOT=$(readlink -f "${MYDIR}/../../lede-project")
-PW_FILE="${OWRT_ROOT}/package/base-files/files/etc/shadow"
+LEDE_ROOT=$(readlink -f "${MYDIR}/../../source-lede-17.01")
+PW_FILE="${LEDE_ROOT}/package/base-files/files/etc/shadow"
 SSH_CERT_BITS=4096
-SSH_CERT_PUB="${OWRT_ROOT}/package/network/services/dropbear/files/authorized_keys"
-SSH_CERT_PVT=$(readlink -f "${OWRT_ROOT}/../a140808_rsa.private")
+SSH_CERT_PUB="${LEDE_ROOT}/package/network/services/dropbear/files/authorized_keys"
+SSH_CERT_PVT=$(readlink -f "${LEDE_ROOT}/../a140808_private.pem")
 
 
 #

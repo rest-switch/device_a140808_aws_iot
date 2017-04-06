@@ -71,12 +71,7 @@ define Package/a140808/install
 	$(INSTALL_CONF) ./files/certs/*.pem $(1)/etc/config/aws-iot/certs/
 	$(INSTALL_DATA) ./files/host.cfg $(1)/etc/config/aws-iot/
 	$(INSTALL_DIR) $(1)/etc/init.d
-	$(INSTALL_BIN) ./files/a140808.init $(1)/etc/init.d/a140808	
-#	$(INSTALL_DATA) ./files/banner $(1)/etc/banner
-#	$(VERSION_SED) $(1)/etc/banner
-#	$(INSTALL_DATA) ./files/system $(1)/etc/config/system
-#	$(INSTALL_DATA) ./files/network $(1)/etc/config/network
-#	$(INSTALL_DATA) ./files/wireless $(1)/etc/config/wireless
+	$(INSTALL_BIN) ./files/a140808.init $(1)/etc/init.d/a140808
 endef
 
 $(eval $(call BuildPackage,a140808))

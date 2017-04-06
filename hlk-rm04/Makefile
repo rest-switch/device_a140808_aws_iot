@@ -28,9 +28,9 @@ MINIPRO          := $(OUTBIN)/minipro
 MINIPRO_SRC_URL  := https://github.com/inindev/minipro/archive/master.tar.gz
 TARGET           := $(OUTBIN)/openwrt-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
 LEDE_ROOT        := source-lede-17.01
+LEDE_VER         := 17.01
 LEDE_SRC_URL     := https://github.com/lede-project/source/archive/lede-17.01.tar.gz
 LEDE_FEEDS       := $(LEDE_ROOT)/feeds
-LEDE_VER         := 17.01
 LEDE_CFG         := $(LEDE_ROOT)/.config
 #LEDE_TGT         := $(LEDE_ROOT)/bin/targets/ramips/rt305x/openwrt-$(shell cat "$(LEDE_ROOT)/version")-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
 SSH_TOOL         := tools/scripts/ssh_access.sh
@@ -42,7 +42,7 @@ SERIAL_ADDR      := $(shell echo -n $$((0x40400)))
 
 .DEFAULT all: target
 
-target: | config ssh_check
+target: | config certs ssh_check
 	$(MAKE) -C "$(LEDE_ROOT)" SOURCE_DATE_EPOCH=$$(date +%s)
 	@if [ ! -d "$(OUTBIN)" ]; then mkdir "$(OUTBIN)"; fi
 	@cp "$(LEDE_TGT)" "$(TARGET)"
@@ -140,14 +140,14 @@ $(LEDE_ROOT):
 	echo "$(LEDE_VER)" > "$(LEDE_ROOT)/version"
 
 patch: $(LEDE_ROOT)/package/utils/a140808
-$(LEDE_ROOT)/package/utils/a140808: $(LEDE_ROOT)
+$(LEDE_ROOT)/package/utils/a140808: | $(LEDE_ROOT)
 	@echo
 	@echo applying a140808 patches to lede project...
 	$(foreach patch,$(PATCHES),if patch --dry-run -N -p1 -d "$(LEDE_ROOT)" < "$(patch)" 2>&1 >/dev/null; then patch -p1 -d "$(LEDE_ROOT)" < "$(patch)"; fi;)
 	ln -sf ../../../a140808 "$(LEDE_ROOT)/package/utils/a140808"
 
 feeds: $(LEDE_FEEDS)
-$(LEDE_FEEDS): patch
+$(LEDE_FEEDS): | patch
 	@echo
 	@echo applying feeds to lede project...
 	"$(LEDE_ROOT)/scripts/feeds" update -a
@@ -155,11 +155,31 @@ $(LEDE_FEEDS): patch
 	@rm -f "$(LEDE_CFG)" # remove .config file that the feeds gen
 
 config: $(LEDE_CFG)
-$(LEDE_CFG): feeds
+$(LEDE_CFG): | feeds
 	@echo
 	@echo generating lede project .config file...
 	cat "$(CFG_DIFF)" > "$(LEDE_CFG)"
 	$(MAKE) -C "$(LEDE_ROOT)" defconfig
+
+certs: patch
+    ifeq ("$(wildcard config/*.pem)","")
+	@echo
+	@echo " error: no pem certificates present in certs directory"
+	@echo "        please include root_ca.pem, cert.pem, and private.pem"
+	@echo
+	exit 1
+    endif
+	@echo copying certificate files...
+	cp config/*.pem "$(LEDE_ROOT)/package/utils/a140808/files/certs"
+
+    ifeq ("$(wildcard config/host.cfg)","")
+	@echo
+	echo " error: config/host.cfg not found"
+	@echo
+	exit 2
+    endif
+	@echo copying host.cfg file...
+	cp config/host.cfg "$(LEDE_ROOT)/package/utils/a140808/files"
 
 sernum: $(SERNUM)
 $(SERNUM):
@@ -211,7 +231,7 @@ ssh_pw:
 ssh_safe: ssh_pw ssh_cert
 	@"$(SSH_TOOL)" "-a" || ( \
 	echo "********************************************************************************"; \
-	echo " error: No root password or cert file specified."; \
+	echo " error: No root password nor cert file specified."; \
 	echo "        ssh access will not be possible without a root password or"; \
 	echo "        RSA certificate file. Specify "make ssh=none" if this is desired."; \
 	echo ""; \
@@ -235,5 +255,5 @@ ssh_safe: ssh_pw ssh_cert
 	echo "********************************************************************************"; \
 	exit 14 )
 
-.PHONY: all target image program feeds patch cacerts config minipro clean distclean ssh_none ssh_cert ssh_pw ssh_safe
+.PHONY: all target image program patch feeds config certs sernum mac2bin minipro clean distclean ssh_none ssh_cert ssh_pw ssh_safe
 
