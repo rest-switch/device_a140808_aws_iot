@@ -26,13 +26,13 @@ MAC2BIN          := $(OUTBIN)/mac2bin
 SERNUM           := $(OUTBIN)/serialnum
 MINIPRO          := $(OUTBIN)/minipro
 MINIPRO_SRC_URL  := https://github.com/inindev/minipro/archive/master.tar.gz
-TARGET           := $(OUTBIN)/openwrt-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
+TARGET           := $(OUTBIN)/lede-17.01-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
 LEDE_ROOT        := source-lede-17.01
-LEDE_VER         := 17.01
+LEDE_COMMIT      := $(shell wget --header="accept:application/vnd.github.VERSION.sha" -qO- https://api.github.com/repos/lede-project/source/commits/lede-17.01 | cut -c1-7)
 LEDE_SRC_URL     := https://github.com/lede-project/source/archive/lede-17.01.tar.gz
 LEDE_FEEDS       := $(LEDE_ROOT)/feeds
 LEDE_CFG         := $(LEDE_ROOT)/.config
-#LEDE_TGT         := $(LEDE_ROOT)/bin/targets/ramips/rt305x/openwrt-$(shell cat "$(LEDE_ROOT)/version")-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
+LEDE_TGT         := $(LEDE_ROOT)/bin/targets/ramips/rt305x/lede-17.01-$(LEDE_COMMIT)-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
 SSH_TOOL         := tools/scripts/ssh_access.sh
 FLASH_TOOL       := tools/scripts/program_flash.py
 MAC1A_ADDR       := $(shell echo -n $$((0x40004)))
@@ -137,7 +137,7 @@ $(LEDE_ROOT):
 	@echo
 	@echo fetching lede project...
 	wget -O- "$(LEDE_SRC_URL)" | tar xz
-	echo "$(LEDE_VER)" > "$(LEDE_ROOT)/version"
+	echo "$(LEDE_COMMIT)" > "$(LEDE_ROOT)/version"
 
 patch: $(LEDE_ROOT)/package/utils/a140808
 $(LEDE_ROOT)/package/utils/a140808: | $(LEDE_ROOT)
