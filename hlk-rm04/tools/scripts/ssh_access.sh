@@ -210,7 +210,7 @@ has_cert() {
 # has_pass: returns 0 for no root hash, 1 for root hash
 #
 has_pass() {
-    grep -i '^root:.\?:' "${PW_FILE}"
+    grep -qi '^root:.\?:' "${PW_FILE}"
     if [ $? -ne 0 ]; then
         return 1  # has root pw hash
     fi
