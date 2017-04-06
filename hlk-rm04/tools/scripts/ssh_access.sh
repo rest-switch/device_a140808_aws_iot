@@ -188,6 +188,10 @@ ssh_pass() {
 has_cert() {
     local pub_cert_bytes=0
 
+    if [ ! -f "${SSH_CERT_PUB}" ]; then
+        return 0  # no cert
+    fi
+
     pub_cert_bytes=$(stat -c '%s' "${SSH_CERT_PUB}" 2>/dev/null)
     if [ $? -ne 0 ]; then
         errormsg "failed to stat ssh public certificate: ${SSH_CERT_PUB} (code: $?)"
@@ -206,8 +210,8 @@ has_cert() {
 # has_pass: returns 0 for no root hash, 1 for root hash
 #
 has_pass() {
-    grep -iq '^root:.\?:' "${PW_FILE}"
-    if [ $? -eq 0 ]; then
+    grep -i '^root:.\?:' "${PW_FILE}"
+    if [ $? -ne 0 ]; then
         return 1  # has root pw hash
     fi
 
@@ -255,8 +259,8 @@ fi
 while [ $# -gt 0 ]; do
     case "$1" in
     -a|--access)
-        has_cert && exit 0
-        has_pass && exit 0
+        ! has_cert && exit 0
+        ! has_pass && exit 0
         exit 1  # no access
         ;;
     -c|--cert)
@@ -278,8 +282,8 @@ while [ $# -gt 0 ]; do
         ssh_pass none
         ;;
     -r|--report)
-        has_cert && printf "cert present\n" || printf "cert not present\n"
-        has_pass && printf "pass present\n" || printf "pass not present\n"
+        ! has_cert && printf "cert present\n" || printf "cert not present\n"
+        ! has_pass && printf "pass present\n" || printf "pass not present\n"
         ;;
     -*)
         errormsg "unknown option: $1"
