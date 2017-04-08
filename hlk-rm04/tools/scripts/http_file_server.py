@@ -23,7 +23,7 @@ import socket, SocketServer
 
 PORT = 8080
 OUT_FILE = "sysupgrade.bin"
-IN_FILEPATH = "../../bin/lede-17.01-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin"
+IN_FILEPATH = os.path.dirname(os.path.realpath(__file__)) + "/../../bin/lede-17.01-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin"
 
 
 class HttpRequestHandler(SocketServer.BaseRequestHandler):
@@ -78,14 +78,14 @@ def main():
 
     httpd = SocketServer.TCPServer(("", PORT), HttpRequestHandler)
 
-    print("\nWaiting for connection...")
-    print("  Address: {}".format(myip))
-    print("  Port: {}\n".format(PORT))
+    print("\nwaiting for connection...")
+    print("  address: {}".format(myip))
+    print("  port: {}\n".format(PORT))
 
-    print("To upgrade the a140808 device, run the following command:")
+    print("to upgrade the a140808 device, run the following command:")
     print("  \033[33mecho 3 > /proc/sys/vm/drop_caches && /sbin/sysupgrade -v http://{}{}/{}\033[0m\n".format(myip, "" if(PORT==80) else ":"+str(PORT), OUT_FILE));
 
-    print("To factory reset the a140808 device, run the following command:")
+    print("to factory reset the a140808 device, run the following command:")
     print("  mtd -r erase rootfs_data\n")
 
     try:
