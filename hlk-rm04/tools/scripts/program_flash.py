@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2015-2016 The REST Switch Authors
+# Copyright 2015-2017 The REST Switch Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,18 +17,17 @@
 # Author: John Clark (johnc@restswitch.com)
 #
 
+from __future__ import print_function
+
+import argparse
 import datetime
-import getopt
-import os
-import re
 import subprocess
-import sys
+import os, re, sys
 
 MYDIR = os.path.dirname(os.path.abspath(__file__))
 MINIPRO = os.path.realpath(os.path.join(MYDIR, '../minipro/minipro'))
 IMAGE_FILE_PATH = os.path.realpath(os.path.join(MYDIR, '../../bin'))
 IMAGE_FILE_BYTES = 0x400000
-
 
 
 #
@@ -56,7 +55,7 @@ def get_image_file(path, size):
         if fs.st_size == size: matches.append((fs.st_ctime, file))
 
     if len(matches) == 0:
-        return ''
+        return None
 
     if len(matches) == 1:
         file = matches[0][1]
@@ -75,7 +74,7 @@ def get_image_file(path, size):
     print('   q) quit\n')
     try: idx = parse_uint(raw_input('choice: '), len(matches))
     except KeyboardInterrupt: idx = 0
-    if idx < 1: return ''
+    if idx < 1: return None
 
     file = matches[idx-1][1]
     image_file = os.path.join(path, file)
@@ -138,11 +137,11 @@ def write_flash(image_file, flash_name):
     if not flash_name:
         flash_name = get_flash_name(get_flash_id())
 
-    print('')
+    print()
     print('Writing image file to flash:')
     print('   Flash device name: {0}'.format(flash_name))
     print('   Image file name:   {0}'.format(image_file))
-    print('')
+    print()
     sp = subprocess.Popen([MINIPRO, '-p',flash_name, '-w',image_file], stderr=subprocess.PIPE)
     err = sp.communicate()[1]
     if sp.returncode != 0:
@@ -161,50 +160,21 @@ def parse_uint(val, max):
     elif res > max: res = 0
     return res
 
-#
-# usage() - command line help
-#
-def usage(appname):
-    appname = os.path.basename(appname)
-    print('\nWrite a binary image file to the specified flash memory.\n')
-    print('Usage:')
-    print('  {0} [options]'.format(appname))
-    print('')
-    print('Options:')
-    print('')
-    print('  -d, --detect            auto-detect flash memory id and name')
-    print('  -f, --file <filename>   binary image filename')
-    print('  -h, --help              display this help text and exit')
-    print('  -p, --part <partname>   flash memory part name - eg: MX25L3206E, PM25LQ032C, or W25Q32BV')
-    print('')
-
 
 #
 # main() - program entry point
 #
-def main(argv):
-    opts, extra = getopt.getopt(argv[1:],'df:hp:',['detect','file=','help','part='])
+def main():
+    parser = argparse.ArgumentParser(description='Write a binary image file to the specified flash memory.')
+    parser.add_argument('-d', '--detect', dest='flash_detect', action='store_true', help='auto-detect flash memory id and name')
+    parser.add_argument('-p', '--part', dest='flash_partname', action='store', metavar='<part_name>', help='flash memory part id - eg: MX25L3206E, PM25LQ032C, or W25Q32BV')
+    parser.add_argument('-f', '--file', dest='image_filename', action='store', metavar='<img_file>', help='binary image filename')
+    args = parser.parse_args()
 
-    show_help = False
-    detect_flash = False
-    image_file = ''
-    flash_name = ''
-    for opt, arg in opts:
-        if opt in ('-h', '--help'):
-            show_help = True
-        elif opt in ('-d', '--detect'):
-            detect_flash = True
-        elif opt in ('-f', '--file'):
-            image_file = arg.strip()
-        elif opt in ('-p', '--part'):
-            flash_name = arg.strip()
-
-    if show_help:
-        usage(argv[0])
-    elif detect_flash:
+    if args.flash_detect:
         print_flash_info()
     else:
-        write_flash(image_file, flash_name)
+        write_flash(args.image_filename, args.flash_partname)
 
 
 #
@@ -212,29 +182,28 @@ def main(argv):
 #
 if __name__ == '__main__':
     try:
-        main(sys.argv)
-    except getopt.GetoptError:
-        usage(sys.argv[0])
-        sys.exit(1)
+        main()
+    except SystemExit as ex:
+        sys.exit(ex.code)
     except FlashLookupError as ex:
-        sys.stderr.write('error 2: {0}\n'.format(ex.message))
-        sys.exit(2)
+        sys.stderr.write('error 12: {0}\n'.format(ex.message))
+        sys.exit(12)
     except FlashUnknownError as ex:
-        sys.stderr.write('error 3: {0}\n'.format(ex.message))
-        sys.exit(3)
+        sys.stderr.write('error 13: {0}\n'.format(ex.message))
+        sys.exit(13)
     except FlashInvalidError as ex:
-        sys.stderr.write('error 4: {0}\n'.format(ex.message))
-        sys.exit(4)
+        sys.stderr.write('error 14: {0}\n'.format(ex.message))
+        sys.exit(14)
     except ImageUnknownError as ex:
-        sys.stderr.write('error 5: {0}\n'.format(ex.message))
-        sys.exit(5)
+        sys.stderr.write('error 15: {0}\n'.format(ex.message))
+        sys.exit(15)
     except ImageInvalidError as ex:
-        sys.stderr.write('error 6: {0}\n'.format(ex.message))
-        sys.exit(6)
+        sys.stderr.write('error 16: {0}\n'.format(ex.message))
+        sys.exit(16)
     except IOError as ex:
-        sys.stderr.write('error 8: {0}\n'.format(ex.message))
-        sys.exit(8)
+        sys.stderr.write('error 17: {0}\n'.format(ex.message))
+        sys.exit(17)
     except:
-        sys.stderr.write('error 9: programming failed\n')
-        sys.exit(9)
+        sys.stderr.write('error 18: programming failed\n')
+        sys.exit(18)
 
