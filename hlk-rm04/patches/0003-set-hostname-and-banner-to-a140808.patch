@@ -41,7 +41,7 @@ index 4ec646a..2870469 100644
 +    / _ |<  // / // _ \( _ )/ _ \( _ )
 +   / __ |/ //_  _/ // / _  / // / _  |
 +  /_/ |_/_/  /_/ \___/\___/\___/\___/[0m
-+       [1;30mpowered by LEDE %N %V[0m
++         [1;30mpowered by %d %n %v[0m
 +
  
 diff --git a/package/base-files/files/etc/init.d/system b/package/base-files/files/etc/init.d/system
