@@ -16,28 +16,28 @@
 # Author: John Clark (johnc@restswitch.com)
 #
 
-
-OUTBIN           := bin
-CFG_DIFF         := patches/diff_config
-PATCHES          := $(sort $(wildcard patches/*.patch))
-UBOOT            := firmware/hlk-rm04_uboot-50000.bin
-MAC              := $(strip $(mac))
-MAC2BIN          := $(OUTBIN)/mac2bin
-MINIPRO          := $(OUTBIN)/minipro
-MINIPRO_SRC_URL  := https://github.com/inindev/minipro/archive/master.tar.gz
-TARGET           := $(OUTBIN)/lede-17.01-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
-LEDE_ROOT        := source-lede-17.01
-LEDE_COMMIT      := $(shell wget --header="accept:application/vnd.github.VERSION.sha" -qO- https://api.github.com/repos/lede-project/source/commits/lede-17.01 | cut -c1-7)
-LEDE_SRC_URL     := https://github.com/lede-project/source/archive/lede-17.01.tar.gz
-LEDE_FEEDS       := $(LEDE_ROOT)/feeds
-LEDE_CFG         := $(LEDE_ROOT)/.config
-LEDE_TGT         := $(LEDE_ROOT)/bin/targets/ramips/rt305x/lede-17.01-$(LEDE_COMMIT)-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
-SSH_TOOL         := tools/scripts/ssh_access.sh
-FLASH_TOOL       := tools/scripts/program_flash.py
-MAC1A_ADDR       := $(shell echo -n $$((0x40004)))
-MAC1B_ADDR       := $(shell echo -n $$((0x40028)))
-MAC2_ADDR        := $(shell echo -n $$((0x4002e)))
-SERIAL_ADDR      := $(shell echo -n $$((0x40400)))
+OUTBIN           = bin
+TARGET           = $(OUTBIN)/lede-17.01-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
+LEDE_ROOT        = source-lede-17.01
+LEDE_COMMIT      = $(shell wget --header="accept:application/vnd.github.VERSION.sha" -qO- https://api.github.com/repos/lede-project/source/commits/lede-17.01 | cut -c1-7)
+LEDE_SRC_URL     = https://github.com/lede-project/source/archive/lede-17.01.tar.gz
+LEDE_FEEDS       = $(LEDE_ROOT)/feeds
+LEDE_CFG         = $(LEDE_ROOT)/.config
+LEDE_TGT         = $(LEDE_ROOT)/bin/targets/ramips/rt305x/lede-17.01-$(shell cat "$(LEDE_ROOT)/version")-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
+PATCHES          = $(sort $(wildcard patches/*.patch))
+CFG_DIFF         = patches/diff_config
+UBOOT            = firmware/hlk-rm04_uboot-50000.bin
+MAC              = $(strip $(mac))
+MAC2BIN          = python -c'import sys;sys.stdout.write(bytearray.fromhex(sys.argv[1]))'
+MAC1A_ADDR       = $(shell echo -n $$((0x40004)))
+MAC1B_ADDR       = $(shell echo -n $$((0x40028)))
+MAC2_ADDR        = $(shell echo -n $$((0x4002e)))
+SERIAL_ADDR      = $(shell echo -n $$((0x40400)))
+SERIAL_GEN       = tools/scripts/write_bin.py -g | cut -sf2 -d:
+SSH_TOOL         = tools/scripts/ssh_access.sh
+FLASH_TOOL       = tools/scripts/program_flash.py
+MINIPRO          = $(OUTBIN)/minipro
+MINIPRO_SRC_URL  = https://github.com/inindev/minipro/archive/master.tar.gz
 
 .DEFAULT all: target
 
@@ -46,7 +46,7 @@ target: | config certs ssh_check
 	@if [ ! -d "$(OUTBIN)" ]; then mkdir "$(OUTBIN)"; fi
 	@cp "$(LEDE_TGT)" "$(TARGET)"
 
-image: | $(TARGET) $(SERNUM) $(MAC2BIN)
+image: | $(TARGET)
     ifeq ("","$(MAC)")
 	@echo "********************************************************************************"
 	@echo " error: Image target requires a MAC address to be specified: mac=aabbccddeeff"
@@ -63,7 +63,7 @@ image: | $(TARGET) $(SERNUM) $(MAC2BIN)
     endif
 
 	$(eval MAC2 := $(shell printf "%x" $$((0x$(MAC) + 1))))
-	$(eval DEVID := $(shell $(SERNUM)))
+	$(eval DEVID := $(shell $(SERIAL_GEN)))
 	$(eval IMGFILE := a140808_$(DEVID).bin)
 	@echo
 	@echo "  building image file..."
@@ -76,9 +76,9 @@ image: | $(TARGET) $(SERNUM) $(MAC2BIN)
 
 	cp "$(UBOOT)" "$(OUTBIN)/$(IMGFILE)"
 	# mac addresses
-	"$(MAC2BIN)" "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1A_ADDR) conv=notrunc
-	"$(MAC2BIN)" "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1B_ADDR) conv=notrunc
-	"$(MAC2BIN)" "$(MAC2)" | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC2_ADDR) conv=notrunc
+	$(MAC2BIN) "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1A_ADDR) conv=notrunc
+	$(MAC2BIN) "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1B_ADDR) conv=notrunc
+	$(MAC2BIN) "$(MAC2)" | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC2_ADDR) conv=notrunc
 	# serial number
 	@echo -n $(DEVID) | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=9 seek=$(SERIAL_ADDR) conv=notrunc
 	cat "$(TARGET)" >> "$(OUTBIN)/$(IMGFILE)"
@@ -180,11 +180,6 @@ certs: patch
 	@echo copying host.cfg file...
 	cp config/host.cfg "$(LEDE_ROOT)/package/utils/a140808/files"
 
-mac2bin: $(MAC2BIN)
-$(MAC2BIN):
-	$(MAKE) -C "tools/mac2bin"
-	mv "tools/mac2bin/mac2bin" "$(OUTBIN)"
-
 minipro: $(MINIPRO)
 $(MINIPRO):
 	@if [ ! -d "tools/minipro" ]; then \
@@ -197,7 +192,6 @@ $(MINIPRO):
 	mv "tools/minipro/minipro" "$(OUTBIN)"
 
 clean distclean:
-	$(MAKE) -C "tools/mac2bin" clean
 	$(MAKE) -C "tools/minipro" clean
 	@if [ -d "$(LEDE_ROOT)" ]; then $(MAKE) -C "$(LEDE_ROOT)" $@; fi
 	rm -rf "$(OUTBIN)"
@@ -248,5 +242,4 @@ ssh_safe: ssh_pw ssh_cert
 	echo "********************************************************************************"; \
 	exit 14 )
 
-.PHONY: all target image program patch feeds config certs sernum mac2bin minipro clean distclean ssh_none ssh_cert ssh_pw ssh_safe
-
+.PHONY: all target image program patch feeds config certs minipro clean distclean ssh_none ssh_cert ssh_pw ssh_safe
