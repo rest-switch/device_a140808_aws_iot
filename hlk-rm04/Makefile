@@ -23,7 +23,6 @@ PATCHES          := $(sort $(wildcard patches/*.patch))
 UBOOT            := firmware/hlk-rm04_uboot-50000.bin
 MAC              := $(strip $(mac))
 MAC2BIN          := $(OUTBIN)/mac2bin
-SERNUM           := $(OUTBIN)/serialnum
 MINIPRO          := $(OUTBIN)/minipro
 MINIPRO_SRC_URL  := https://github.com/inindev/minipro/archive/master.tar.gz
 TARGET           := $(OUTBIN)/lede-17.01-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin
@@ -181,11 +180,6 @@ certs: patch
 	@echo copying host.cfg file...
 	cp config/host.cfg "$(LEDE_ROOT)/package/utils/a140808/files"
 
-sernum: $(SERNUM)
-$(SERNUM):
-	$(MAKE) -C "tools/serialnum"
-	mv "tools/serialnum/serialnum" "$(OUTBIN)"
-
 mac2bin: $(MAC2BIN)
 $(MAC2BIN):
 	$(MAKE) -C "tools/mac2bin"
@@ -203,7 +197,6 @@ $(MINIPRO):
 	mv "tools/minipro/minipro" "$(OUTBIN)"
 
 clean distclean:
-	$(MAKE) -C "tools/serialnum" clean
 	$(MAKE) -C "tools/mac2bin" clean
 	$(MAKE) -C "tools/minipro" clean
 	@if [ -d "$(LEDE_ROOT)" ]; then $(MAKE) -C "$(LEDE_ROOT)" $@; fi
