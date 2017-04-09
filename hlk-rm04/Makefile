@@ -33,9 +33,10 @@ MAC1A_ADDR       = $(shell echo -n $$((0x40004)))
 MAC1B_ADDR       = $(shell echo -n $$((0x40028)))
 MAC2_ADDR        = $(shell echo -n $$((0x4002e)))
 SERIAL_ADDR      = $(shell echo -n $$((0x40400)))
-SERIAL_GEN       = tools/scripts/write_bin.py -g | cut -sf2 -d:
+SERIAL_TOOL      = tools/scripts/write_bin.py -g | cut -sf2 -d:
 SSH_TOOL         = tools/scripts/ssh_access.sh
 FLASH_TOOL       = tools/scripts/program_flash.py
+HTTPD_IMG_TOOL   = tools/scripts/http_file_server.py
 MINIPRO          = $(OUTBIN)/minipro
 MINIPRO_SRC_URL  = https://github.com/inindev/minipro/archive/master.tar.gz
 
@@ -63,7 +64,7 @@ image: | $(TARGET)
     endif
 
 	$(eval MAC2 := $(shell printf "%x" $$((0x$(MAC) + 1))))
-	$(eval DEVID := $(shell $(SERIAL_GEN)))
+	$(eval DEVID := $(shell $(SERIAL_TOOL)))
 	$(eval IMGFILE := a140808_$(DEVID).bin)
 	@echo
 	@echo "  building image file..."
@@ -131,6 +132,9 @@ program: minipro
 	    echo "********************************************************************************"; \
 	    exit 9; \
 	fi )
+
+serve:
+	$(HTTPD_IMG_TOOL)
 
 $(LEDE_ROOT):
 	@echo
@@ -242,4 +246,4 @@ ssh_safe: ssh_pw ssh_cert
 	echo "********************************************************************************"; \
 	exit 14 )
 
-.PHONY: all target image program patch feeds config certs minipro clean distclean ssh_none ssh_cert ssh_pw ssh_safe
+.PHONY: all target image program serve patch feeds config certs minipro clean distclean ssh_none ssh_cert ssh_pw ssh_safe
