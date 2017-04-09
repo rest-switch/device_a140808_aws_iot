@@ -23,7 +23,7 @@ import socket, SocketServer
 
 MYDIR = os.path.dirname(os.path.abspath(__file__))
 IN_FILEPATH = os.path.realpath(os.path.join(MYDIR, '../../bin/lede-17.01-ramips-rt305x-hlk-rm04-squashfs-sysupgrade.bin'))
-OUT_FILE = sysupgrade.bin
+OUT_FILE = 'sysupgrade.bin'
 PORT = 8080
 
 
@@ -69,13 +69,17 @@ class HttpRequestHandler(SocketServer.BaseRequestHandler):
 
 
 def main():
+    if not os.path.exists(IN_FILEPATH):
+        print('error: file does not exist: {}'.format(IN_FILEPATH))
+        return(1)
+
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.connect(('8.8.8.8', 80))
         myip = s.getsockname()[0]
     except:
         print('error: failed to get local ip address')
-        return(1)
+        return(2)
 
     httpd = SocketServer.TCPServer(('', PORT), HttpRequestHandler)
 
