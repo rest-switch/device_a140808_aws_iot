@@ -1,5 +1,6 @@
 *.DS_Store
 *.o
+*.so
 *.cer
 *.pem
 host.cfg
@@ -7,3 +8,7 @@ avr/tools
 bin
 minipro
 source-lede-17.01
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
