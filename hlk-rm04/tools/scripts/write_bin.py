@@ -23,33 +23,12 @@ import argparse
 import binascii
 import os, re, sys
 import time, base64, struct
+from serialnum import gen_serial
 
 MAC1A_ADDR = 0x40004
 MAC1B_ADDR = 0x40028
 MAC2_ADDR = 0x4002e
 SERIAL_ADDR = 0x40400
-
-JC32_REMAP = {
-    'A': '0', 'J': 'j', 'S': 'u', '3': '4',
-    'B': 'a', 'K': 'k', 'T': 'v', '4': '6',
-    'C': 'b', 'L': 'm', 'U': 'w', '5': '7',
-    'D': 'c', 'M': 'n', 'V': 'x', '6': '8',
-    'E': 'd', 'N': 'p', 'W': 'y', '7': '9',
-    'F': 'e', 'O': 'q', 'X': 'z',
-    'G': 'f', 'P': 'r', 'Y': '1',
-    'H': 'g', 'Q': 's', 'Z': '2',
-    'I': 'h', 'R': 't', '2': '3',
-    }
-
-
-def gen_serial():
-    t = int(time.time() * 1000)
-    enc = base64.b32encode('\x00\x00' + struct.pack(">Q", t))
-    out = ''
-    for c in enc:
-        if out or (c != 'A'):
-            out += JC32_REMAP[c]
-    return(out)
 
 
 def mac_bin2str(mac_bin, pnct='-'):

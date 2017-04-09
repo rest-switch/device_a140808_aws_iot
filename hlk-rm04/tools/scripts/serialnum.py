@@ -31,17 +31,16 @@ JC32_REMAP = {
     'I': 'h', 'R': 't', '2': '3',
 }
 
-def main():
+
+def gen_serial():
     t = int(time.time() * 1000)
     enc = base64.b32encode('\x00\x00' + struct.pack(">Q", t))
-
     out = ''
     for c in enc:
         if out or (c != 'A'):
             out += JC32_REMAP[c]
-
-    print(out)
+    return(out)
 
 
 if __name__ == '__main__':
-    exit(main())
+    gen_serial()
