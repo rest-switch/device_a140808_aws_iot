@@ -43,4 +43,4 @@ def gen_serial():
 
 
 if __name__ == '__main__':
-    gen_serial()
+    print(gen_serial())
