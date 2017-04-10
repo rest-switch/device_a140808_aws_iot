@@ -25,9 +25,9 @@ import subprocess
 import os, re, sys
 
 MYDIR = os.path.dirname(os.path.abspath(__file__))
-MINIPRO = os.path.realpath(os.path.join(MYDIR, '../minipro/minipro'))
 IMAGE_FILE_PATH = os.path.realpath(os.path.join(MYDIR, '../../bin'))
 IMAGE_FILE_BYTES = 0x400000
+MINIPRO = os.path.realpath(os.path.join(IMAGE_FILE_PATH, 'minipro'))
 
 
 #
