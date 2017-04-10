@@ -88,49 +88,49 @@ image: | $(TARGET)
 
 program: minipro
 	@python "$(FLASH_TOOL)" -p "$(strip $(flash))" -f "$(strip $(image))" 2>/dev/null || ( rc=$$?; \
-	if [ "$$rc" -eq "2" ] ; then \
+	if [ "$$rc" -eq "12" ] ; then \
 	    echo "********************************************************************************"; \
 	    echo " error: Detected a flash memory other than MX25L3206E, PM25LQ032C, or W25Q32BV "; \
 	    echo "        manually specify the flash memory name using: flash=xxxxxx"; \
 	    echo "        see: minipro/devices.h for a complete list of flash names"; \
 	    echo "    *** please report the new memory name to: johnc@restswitch.com ***"; \
 	    echo "********************************************************************************"; \
-	    exit 2; \
-	elif [ "$$rc" -eq "3" ] ; then \
+	    exit 12; \
+	elif [ "$$rc" -eq "13" ] ; then \
 	    echo "********************************************************************************"; \
 	    echo " error: The flash device must be either MX25L3206E, PM25LQ032C, or W25Q32BV"; \
 	    echo "             eg: flash=MX25L3206E or flash=W25Q32BV"; \
 	    echo "            see: minipro/devices.h for the complete list"; \
 	    echo "********************************************************************************"; \
-	    exit 3; \
-	elif [ "$$rc" -eq "4" ] ; then \
+	    exit 13; \
+	elif [ "$$rc" -eq "14" ] ; then \
 	    echo "********************************************************************************"; \
 	    echo " error: Invalid flash name specified. Check flash= setting and try again."; \
 	    echo "            see: minipro/devices.h for the complete list"; \
 	    echo "********************************************************************************"; \
-	    exit 4; \
-	elif [ "$$rc" -eq "5" ] ; then \
+	    exit 14; \
+	elif [ "$$rc" -eq "15" ] ; then \
 	    echo "********************************************************************************"; \
 	    echo " error: Image file not found or not specified - eg: image=a140808_a????????.bin"; \
 	    echo "********************************************************************************"; \
-	    exit 5; \
-	elif [ "$$rc" -eq "6" ] ; then \
+	    exit 15; \
+	elif [ "$$rc" -eq "16" ] ; then \
 	    echo "********************************************************************************"; \
 	    echo " error: Image file incorrect size: \"$(strip $(image))\""; \
 	    echo "********************************************************************************"; \
-	    exit 6; \
-	elif [ "$$rc" -eq "8" ] ; then \
+	    exit 16; \
+	elif [ "$$rc" -eq "17" ] ; then \
 	    echo "********************************************************************************"; \
 	    echo " io error: Check Minipro and device connections then try again."; \
 	    echo "********************************************************************************"; \
-	    exit 8; \
+	    exit 17; \
 	else \
 	    echo "********************************************************************************"; \
 	    echo " error: Programming failed with python script error $$rc"; \
 	    echo "        Check connections and try again."; \
 	    echo "        Debug using the script directly: tools/scripts/program_flash.py"; \
 	    echo "********************************************************************************"; \
-	    exit 9; \
+	    exit $$rc; \
 	fi )
 
 serve:
