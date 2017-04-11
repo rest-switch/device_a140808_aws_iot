@@ -23,26 +23,27 @@ import argparse
 import binascii
 import os, re, sys
 import time, base64, struct
+from collections import namedtuple
 from serialnum import gen_serial
 
-MAC1A_ADDR = 0x40004
-MAC1B_ADDR = 0x40028
-MAC2_ADDR = 0x4002e
+MAC1A_ADDR  = 0x40004
+MAC1B_ADDR  = 0x40028
+MAC2_ADDR   = 0x4002e
 SERIAL_ADDR = 0x40400
 
 
 def mac_bin2str(mac_bin, pnct='-'):
-    if len(mac_bin) != 6:
+    if not mac_bin or len(mac_bin) != 6:
         return None
-    mac_hexstr = binascii.hexlify(mac_bin)
-    if len(mac_hexstr) != 12:
+    mac_hex_str = binascii.hexlify(mac_bin)
+    if len(mac_hex_str) != 12:
         return None
-    if not pnct:
-        return mac_hexstr
-    return pnct.join(mac_hexstr[i:i+2] for i in range(0,12,2))
+    return pnct.join(mac_hex_str[i:i+2] for i in range(0,12,2)) if pnct else mac_hex_str
 
 def mac_str2bin(mac_str):
-    mac_hexstr = mac_str.replace(b':', b'').replace(b'-', b'')
+    if not mac_str:
+        return None
+    mac_hexstr = mac_str.replace(b':', b'').replace(b'-', b'').replace(b' ', b'')
     if len(mac_hexstr) != 12:
         return None
     mac_bin = binascii.unhexlify(mac_hexstr)
@@ -51,79 +52,99 @@ def mac_str2bin(mac_str):
     return mac_bin
 
 
-def update_devid(target_bin, serial_num):
-    if not serial_num:
-        serial_num = gen_serial()
+def read_flash_info(image_file):
+    with open(image_file, 'rb') as f:
+        f.seek(MAC1B_ADDR)
+        mac1_bin = f.read(6)
+        f.seek(MAC2_ADDR)
+        mac2_bin = f.read(6)
+        f.seek(SERIAL_ADDR)
+        serial_str = f.read(9)
+
+    flash_info = namedtuple('flash_info', 'mac1 mac2 serial')
+    return(flash_info(mac1=mac_bin2str(mac1_bin), mac2=mac_bin2str(mac2_bin), serial=serial_str))
+
+def write_flash_info(image_file, mac=None, serial=None):
+    with open(image_file, 'r+b') as f:
+        mac1_bin = mac_str2bin(mac)
+        mac2_bin = None
+        if mac1_bin:
+            mac1_ulong = struct.unpack('>Q', '\x00\x00'+mac1_bin)[0]
+            mac2_bin = mac_str2bin('%012x' % (mac1_ulong+1))
+            f.seek(MAC1A_ADDR)
+            f.write(mac1_bin)
+            f.seek(MAC1B_ADDR)
+            f.write(mac1_bin)
+            f.seek(MAC2_ADDR)
+            f.write(mac2_bin)
+        if serial and re.match(r'^[0abcdefghjkmnpqrstuvwxyz12346789]{9}$', serial):
+            f.seek(SERIAL_ADDR)
+            f.write(serial)
+
+    flash_info = namedtuple('flash_info', 'mac1 mac2 serial')
+    return(flash_info(mac1=mac_bin2str(mac1_bin), mac2=mac_bin2str(mac2_bin), serial=serial))
+
+
+def gen_filename(image_file):
+    match = re.match(r'^(.*?)_.*$', image_file)
+    if match and match.lastindex > 0:
+        base = match.group(1)
     else:
-        match = re.match(r'^[0abcdefghjkmnpqrstuvwxyz12346789]{9}$', serial_num)
+        base = "a140808"
+
+    flash_info = read_flash_info(image_file)
+    mac_unformatted = flash_info.mac1.replace(b':', b'').replace(b'-', b'').replace(b' ', b'')
+    return('{}_{}_{}.bin'.format(base, mac_unformatted, flash_info.serial))
+
+
+def update_devid(image_file, devid=None):
+    if not devid:
+        devid = gen_serial()
+    else:
+        match = re.match(r'^[0abcdefghjkmnpqrstuvwxyz12346789]{9}$', devid)
         if not match:
             return(1)
 
-    new_target_bin = None
-    match = re.search(r'.*_\w{9}\.bin$', target_bin)
-    if not match:
-        match = re.search(r'.*\.bin$', target_bin)
-        if not match:
-            new_target_bin = target_bin + '_'+serial_num+'.bin'
-        else:
-            new_target_bin = re.sub(r'\.bin$', '_'+serial_num+'.bin', target_bin)
-    else:
-        new_target_bin = re.sub(r'_\w{9}\.bin$', '_'+serial_num+'.bin', target_bin)
+    write_flash_info(image_file, serial=devid)
+    new_image_file_name = gen_filename(image_file)
 
     print()
-    print('  updating device id for image file: {}'.format(target_bin))
-    print('    serial number: {}'.format(serial_num))
-    print('    new file name: {}'.format(new_target_bin))
+    print('  device id for image file updated: {}'.format(image_file))
+    print('        device id: {}'.format(devid))
+    print('    new file name: {}'.format(new_image_file_name))
     print()
 
-    with open(target_bin, 'r+b') as f:
-        f.seek(SERIAL_ADDR)
-        f.write(serial_num)
-
-    if target_bin != new_target_bin:
-        os.rename(target_bin, new_target_bin)
+    if image_file != new_image_file_name:
+        os.rename(image_file, new_image_file_name)
 
     return(0)
 
 
-def update_mac(target_bin, mac_str):
-    mac_bin1 = mac_str2bin(mac_str)
-    if not mac_bin1:
-        return(2)
-
-    mac_ulong1 = struct.unpack('>Q', '\x00\x00'+mac_bin1)[0]
-    mac_bin2 = mac_str2bin('%012x' % (mac_ulong1+1))
+def update_mac(image_file, mac=None):
+    flash_info = write_flash_info(image_file, mac=mac)
+    new_image_file_name = gen_filename(image_file)
 
     print()
-    print('  updating mac addresses for image file: {}'.format(target_bin))
-    print('    mac 1: {}'.format(mac_bin2str(mac_bin1)))
-    print('    mac 2: {}'.format(mac_bin2str(mac_bin2)))
+    print('  mac addresses for image file updated: {}'.format(image_file))
+    print('          mac 1: {}'.format(flash_info.mac1))
+    print('          mac 2: {}'.format(flash_info.mac2))
+    print('  new file name: {}'.format(new_image_file_name))
     print()
 
-    with open(target_bin, 'r+b') as f:
-        f.seek(MAC1A_ADDR)
-        f.write(mac_bin1)
+    if image_file != new_image_file_name:
+        os.rename(image_file, new_image_file_name)
 
-        f.seek(MAC1B_ADDR)
-        f.write(mac_bin1)
-
-        f.seek(MAC2_ADDR)
-        f.write(mac_bin2)
+    return(0)
 
 
-def report_info(target_bin):
-    with open(target_bin, 'rb') as f:
-        f.seek(MAC1B_ADDR)
-        mac1b_addr_bin = f.read(6)
-        f.seek(MAC2_ADDR)
-        mac2_addr_bin = f.read(6)
-        f.seek(SERIAL_ADDR)
-        serial_num = f.read(9)
+def report_info(image_file):
+    flash_info = read_flash_info(image_file)
+
     print()
-    print('     image file: {}'.format(target_bin))
-    print('  serial number: {}'.format(serial_num))
-    print('          mac 1: {}'.format(mac_bin2str(mac1b_addr_bin)))
-    print('          mac 2: {}'.format(mac_bin2str(mac2_addr_bin)))
+    print('     image file: {}'.format(image_file))
+    print('  serial number: {}'.format(flash_info.serial))
+    print('          mac 1: {}'.format(flash_info.mac1))
+    print('          mac 2: {}'.format(flash_info.mac2))
     print()
 
 
@@ -133,7 +154,7 @@ def main():
     parser.add_argument('-r', '--report', dest='do_report_info', action='store_true', help='report device id and mac addresses then exit')
     parser.add_argument('-d', '--devid', dest='serial_num', action='store', metavar='<serialnum>', help='set device id: -d aj3cmxeu1 (omit to generate a new serial number)')
     parser.add_argument('-m', '--mac', dest='mac_addr', action='store', metavar='<address>', help='set mac address: -m aabbccddeeff')
-    parser.add_argument('-t', '--target', dest='target_bin', action='store', metavar='<bin_file>', help='target binary image file')
+    parser.add_argument('-t', '--target', dest='image_file', action='store', metavar='<imgfile>', help='target binary image file')
     args = parser.parse_args()
 
     if args.do_gen_serial:
@@ -142,25 +163,25 @@ def main():
         print()
         return(0)
 
-    if not args.target_bin:
+    if not args.image_file:
         print('***')
         print('***  error: a target binary image file is required:  --target <bin_file>')
         print('***')
         return(12)
 
-    target_bytes = os.path.getsize(args.target_bin)
+    target_bytes = os.path.getsize(args.image_file)
     if target_bytes < 2*1024*1024:
         print('***')
-        print('***  error: {} is not a valid image file'.format(args.target_bin))
+        print('***  error: {} is not a valid image file'.format(args.image_file))
         print('***')
         return(14)
 
     if args.do_report_info:
-        report_info(args.target_bin)
+        report_info(args.image_file)
         return(0)
 
     if args.serial_num:
-        rc = update_devid(args.target_bin, args.serial_num)
+        rc = update_devid(args.image_file, args.serial_num)
         if rc != 0:
             print('***')
             print('***  error: the device id {} is invalid'.format(args.serial_num))
@@ -169,7 +190,7 @@ def main():
             return(16)
 
     if args.mac_addr:
-        rc = update_mac(args.target_bin, args.mac_addr)
+        rc = update_mac(args.image_file, args.mac_addr)
         if rc != 0:
             print('***')
             print('***  error: mac address {} is invalid'.format(args.mac_addr))
@@ -181,3 +202,4 @@ def main():
 if __name__ == '__main__':
     exit(main())
 
+v
