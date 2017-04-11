@@ -56,7 +56,7 @@ def update_devid(target_bin, serial_num):
         serial_num = gen_serial()
     else:
         match = re.match(r'^[0abcdefghjkmnpqrstuvwxyz12346789]{9}$', serial_num)
-        if(match == None):
+        if not match:
             return(1)
 
     new_target_bin = None
@@ -80,7 +80,7 @@ def update_devid(target_bin, serial_num):
         f.seek(SERIAL_ADDR)
         f.write(serial_num)
 
-    if(target_bin != new_target_bin):
+    if target_bin != new_target_bin:
         os.rename(target_bin, new_target_bin)
 
     return(0)
@@ -89,7 +89,7 @@ def update_devid(target_bin, serial_num):
 def update_mac(target_bin, mac_str):
     mac_bin1 = mac_str2bin(mac_str)
     if not mac_bin1:
-        return(1)
+        return(2)
 
     mac_ulong1 = struct.unpack('>Q', '\x00\x00'+mac_bin1)[0]
     mac_bin2 = mac_str2bin('%012x' % (mac_ulong1+1))
@@ -149,7 +149,7 @@ def main():
         return(12)
 
     target_bytes = os.path.getsize(args.target_bin)
-    if(target_bytes < 3*1024*1024):
+    if target_bytes < 2*1024*1024:
         print('***')
         print('***  error: {} is not a valid image file'.format(args.target_bin))
         print('***')
