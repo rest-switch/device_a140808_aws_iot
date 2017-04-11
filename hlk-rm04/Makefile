@@ -29,10 +29,10 @@ CFG_DIFF         = patches/diff_config
 UBOOT            = firmware/hlk-rm04_uboot-50000.bin
 MAC              = $(shell echo $(mac) | sed 's/[- :]//g' | awk '{print tolower($$0)}')
 MAC2BIN          = python -c'import sys;sys.stdout.write(bytearray.fromhex(sys.argv[1]))'
-MAC1A_ADDR       = $(shell echo -n $$((0x40004)))
-MAC1B_ADDR       = $(shell echo -n $$((0x40028)))
-MAC2_ADDR        = $(shell echo -n $$((0x4002e)))
-SERIAL_ADDR      = $(shell echo -n $$((0x40400)))
+MAC1A_ADDR       = $(shell echo $$((0x40004)))
+MAC1B_ADDR       = $(shell echo $$((0x40028)))
+MAC2_ADDR        = $(shell echo $$((0x4002e)))
+SERIAL_ADDR      = $(shell echo $$((0x40400)))
 SERIAL_TOOL      = tools/scripts/serialnum.py
 SSH_TOOL         = tools/scripts/ssh_access.sh
 FLASH_TOOL       = tools/scripts/program_flash.py
@@ -65,7 +65,7 @@ image: | $(TARGET)
 
 	$(eval MAC2 := $(shell printf "%x" $$((0x$(MAC) + 1))))
 	$(eval DEVID := $(shell $(SERIAL_TOOL)))
-	$(eval IMGFILE := a140808_$(DEVID).bin)
+	$(eval IMGFILE := a140808_$(MAC)_$(DEVID).bin)
 	@echo
 	@echo "  building image file..."
 	@echo "    Image File: $(IMGFILE)"
@@ -77,14 +77,14 @@ image: | $(TARGET)
 
 	cp "$(UBOOT)" "$(OUTBIN)/$(IMGFILE)"
 	# mac addresses
-	$(MAC2BIN) "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1A_ADDR) conv=notrunc
-	$(MAC2BIN) "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1B_ADDR) conv=notrunc
-	$(MAC2BIN) "$(MAC2)" | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC2_ADDR) conv=notrunc
+	@$(MAC2BIN) "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1A_ADDR) conv=notrunc
+	@$(MAC2BIN) "$(MAC)"  | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC1B_ADDR) conv=notrunc
+	@$(MAC2BIN) "$(MAC2)" | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=6 seek=$(MAC2_ADDR) conv=notrunc
 	# serial number
-	@echo -n $(DEVID) | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=9 seek=$(SERIAL_ADDR) conv=notrunc
+	@echo $(DEVID) | dd bs=1 of="$(OUTBIN)/$(IMGFILE)" count=9 seek=$(SERIAL_ADDR) conv=notrunc
 	cat "$(TARGET)" >> "$(OUTBIN)/$(IMGFILE)"
 	# padding
-	@tr '\000' '\377' < /dev/zero | dd bs=1 count=$$((0x400000 - $$(stat -c '%s' "$(OUTBIN)/$(IMGFILE)"))) >> "$(OUTBIN)/$(IMGFILE)"
+	@tr '\000' '\377' < /dev/zero | dd bs=1 count=$$((0x400000 - $$(cat "$(OUTBIN)/$(IMGFILE)" | wc -c))) >> "$(OUTBIN)/$(IMGFILE)"
 
 program: minipro
 	@python "$(FLASH_TOOL)" -p "$(strip $(flash))" -f "$(strip $(image))" 2>/dev/null || ( rc=$$?; \
@@ -111,7 +111,7 @@ program: minipro
 	    exit 14; \
 	elif [ "$$rc" -eq "15" ] ; then \
 	    echo "********************************************************************************"; \
-	    echo " error: Image file not found or not specified - eg: image=a140808_a????????.bin"; \
+	    echo " error: Image file not found or not specified - eg: image=a140808_mac_serial.bin"; \
 	    echo "********************************************************************************"; \
 	    exit 15; \
 	elif [ "$$rc" -eq "16" ] ; then \
