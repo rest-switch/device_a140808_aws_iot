@@ -30,6 +30,11 @@ cert=$(uci get aws-iot.$thing_name.cert)
 key=$(uci get aws-iot.$thing_name.key)
 
 start_service() {
+	[ -z $host ] && exit 1
+	[ -z $ca   ] && exit 2
+	[ -z $cert ] && exit 3
+	[ -z $key  ] && exit 4
+
 	procd_open_instance
 	procd_set_param command /usr/bin/a140808 -h $host -p $port -r $ca -c $cert -k $key
 	procd_set_param respawn

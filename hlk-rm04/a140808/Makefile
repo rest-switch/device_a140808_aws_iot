@@ -67,8 +67,15 @@ define Package/a140808/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/a140808 $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/thingname $(1)/usr/bin/
-	$(INSTALL_DIR) $(1)/etc/aws-iot-certs/
+
+	$(INSTALL_DIR) $(1)/etc/uci-defaults
+	sed -e "s/host='.*'/host='$(shell cat ./files/host.cfg || echo ' '    | awk -F: '{print $$1}')'/" \
+	    -e "s/port='.*'/port='$(shell cat ./files/host.cfg || echo '8883' | awk -F: '{print ($$2==0+$$2)?$$2:8883}')'/" \
+	    ./files/08_init_aws-iot_cfg > $(1)/etc/uci-defaults/08_init_aws-iot_cfg
+
+	$(INSTALL_DIR) $(1)/etc/aws-iot-certs
 	$(INSTALL_CONF) ./files/certs/*.pem $(1)/etc/aws-iot-certs/
+
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/a140808.init $(1)/etc/init.d/a140808
 endef

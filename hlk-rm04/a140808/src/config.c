@@ -138,6 +138,9 @@ int set_host_port(const char *buf)
     }
 
     host_port = (atoi(buf) & 0xffff);
+    if(host_port < 1024) {
+        host_port = HOST_DEFAULT_PORT;
+    }
 
     log_info("host port: %" PRIu16, host_port);
 
