@@ -67,9 +67,8 @@ define Package/a140808/install
 	$(INSTALL_DIR) $(1)/usr/bin
 	$(INSTALL_BIN) $(PKG_BUILD_DIR)/a140808 $(1)/usr/bin/
 	$(INSTALL_BIN) ./files/show_thing_name $(1)/usr/bin/
-	$(INSTALL_DIR) $(1)/etc/config/aws-iot/certs
-	$(INSTALL_CONF) ./files/certs/*.pem $(1)/etc/config/aws-iot/certs/
-	$(INSTALL_DATA) ./files/host.cfg $(1)/etc/config/aws-iot/
+	$(INSTALL_DIR) $(1)/etc/aws-iot/
+	$(INSTALL_CONF) ./files/certs/*.pem $(1)/etc/aws-iot-certs/
 	$(INSTALL_DIR) $(1)/etc/init.d
 	$(INSTALL_BIN) ./files/a140808.init $(1)/etc/init.d/a140808
 endef

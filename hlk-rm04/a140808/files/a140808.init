@@ -22,9 +22,16 @@ USE_PROCD=1
 START=99
 STOP=40
 
+thing_name=$(dd if=/dev/mtd2ro bs=1 count=9 skip=1024 2>/dev/null)
+host=$(uci get aws-iot.$thing_name.host)
+port=$(uci get aws-iot.$thing_name.port)
+ca=$(uci get aws-iot.$thing_name.ca)
+cert=$(uci get aws-iot.$thing_name.cert)
+key=$(uci get aws-iot.$thing_name.key)
+
 start_service() {
 	procd_open_instance
-	procd_set_param command /usr/bin/a140808
+	procd_set_param command /usr/bin/a140808 -h $host -p $port -r $ca -c $cert -k $key
 	procd_set_param respawn
 	procd_set_param stdout 1
 	procd_set_param stderr 1
