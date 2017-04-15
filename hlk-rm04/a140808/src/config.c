@@ -29,17 +29,23 @@
 #include <arpa/inet.h>
 #include <linux/if.h>
 
-#include "config.h"
-#include "error.h"
 #include "log.h"
+#include "error.h"
+#include "util.h"
+#include "config.h"
 
 char thing_name[THING_NAME_SIZE+1] = { 0 };
-char host_name[PATH_MAX+1] = { 0 };
-uint16_t host_port = 0;
+
+char host_name[_POSIX_HOST_NAME_MAX+1] = { 0 };
+uint16_t host_port = HOST_DEFAULT_PORT;
+
+char iot_root_ca_path[_POSIX_PATH_MAX+1] = { 0 };
+char iot_cert_path[_POSIX_PATH_MAX+1] = { 0 };
+char iot_private_key_path[_POSIX_PATH_MAX+1] = { 0 };
 
 // a140808/ak1w3b7g4
 #define MQTT_TOPIC_PREFIX "a140808/"
-char mqtt_subscribe_topic[sizeof(MQTT_TOPIC_PREFIX) + THING_NAME_SIZE];  // sizeof includes a term null
+char mqtt_subscribe_topic[sizeof(MQTT_TOPIC_PREFIX) + THING_NAME_SIZE];  // sizeof accounts for the term null
 
 
 ////////////////////////////////////////
@@ -47,26 +53,26 @@ int load_thing_name(char *buf, const size_t buflen)
 {
     if(buflen < (THING_NAME_SIZE+1)) {
         log_error("insufficient buffer");
-        return(FAILURE);
+        return(ERROR_INSUFFICIENT_BUFFER);
     }
 
     FILE *pfd = fopen(THING_NAME_FILEPATH, "r");
     if(NULL == pfd) {
         log_error("failed to open file " THING_NAME_FILEPATH " for read");
-        return(FAILURE);
+        return(ERROR_FILE_NOT_FOUND);
     }
 
     if(fseek(pfd, THING_NAME_OFFSET, SEEK_SET) < 0) {
         log_error("fseek failed, err: [%s]", strerror(errno));
         fclose(pfd);
-        return(FAILURE);
+        return(ERROR_FILE_SEEK);
     }
 
     const size_t b = fread(buf, 1, THING_NAME_SIZE, pfd);
     fclose(pfd);
     if(THING_NAME_SIZE != b) {
         log_error("fread failed (bytes read: %zu)", b);
-        return(FAILURE);
+        return(ERROR_FILE_READ);
     }
     buf[THING_NAME_SIZE] = '\0';
     log_info("thing name: %s", buf);
@@ -77,7 +83,7 @@ int load_thing_name(char *buf, const size_t buflen)
 ////////////////////////////////////////
 const char* get_thing_name(void)
 {
-    if('\0' == thing_name[0]) {
+    if(is_str_empty(thing_name)) {
         // load thing name
         int rc = load_thing_name(thing_name, sizeof(thing_name));
         if(SUCCESS != rc) {
@@ -91,98 +97,132 @@ const char* get_thing_name(void)
 
 
 ////////////////////////////////////////
-int load_host_name(char *buf, const size_t buflen, uint16_t *port)
-{
-    *port = 0;
-    if(buflen < 16)
-    {
-        log_error("insufficient buffer");
-        return(FAILURE);
-    }
-
-    FILE *pfd = fopen(HOST_CFG_FILEPATH, "r");
-    if(NULL == pfd)
-    {
-        log_error("failed to open file " HOST_CFG_FILEPATH " for read");
-        return(FAILURE);
-    }
-
-    char *line = NULL;
-    size_t len = 0;
-    const ssize_t rlen = getline(&line, &len, pfd);
-    fclose(pfd);
-    if(rlen < 0)
-    {
-        log_error("fread failed");
-        return(FAILURE);
-    }
-
-    if(0 == rlen)
-    {
-        if(line) free(line);
-        buf[0] = '\0';
-        return(SUCCESS);
-    }
-
-    if(rlen > buflen)
-    {
-        if(line) free(line);
-        log_error("insufficient buffer");
-        return(FAILURE);
-    }
-
-    for(size_t i=0, imax=(rlen-1); i<imax; ++i)
-    {
-        const char c = line[i];
-        if(':' == c)
-        {
-            buf[i] = '\0';
-            *port = (uint16_t)(((uint32_t)atoi(line + i + 1)) & 0xffff);
-            break;
-        }
-        buf[i] = c;
-    }
-    buf[rlen-1] = '\0';
-
-    if(line) free(line);
-
-    if(0 == *port) *port = HOST_DEFAULT_PORT;
-
-    log_info("host name: %s:%d", buf, *port);
-
-    return(SUCCESS);
-}
-
-////////////////////////////////////////
 const char* get_host_name(void)
 {
-    if('\0' == host_name[0]) {
-        // load host name
-        int rc = load_host_name(host_name, sizeof(host_name), &host_port);
-        if(SUCCESS != rc) {
-            host_name[0] = '\0';
-            host_port = 0;
-            log_error("unable to load host_name - rc: %d", rc);
-            return(NULL);
-        }
-    }
     return(host_name);
 }
 
 ////////////////////////////////////////
+int set_host_name(const char *buf)
+{
+    if(is_str_empty(buf)) {
+        host_name[0] = '\0';
+        return(SUCCESS);
+    }
+
+    if(strlen(buf) >= sizeof(host_name)) {
+        log_error("insufficient buffer");
+        return(ERROR_INSUFFICIENT_BUFFER);
+    }
+
+    strncpy(host_name, buf, sizeof(host_name));
+
+    log_info("host name: %s", host_name);
+
+    return(SUCCESS);
+}
+
+
+////////////////////////////////////////
 uint16_t get_host_port(void)
 {
-    if(0 == host_port) {
-        // load host name
-        int rc = load_host_name(host_name, sizeof(host_name), &host_port);
-        if(SUCCESS != rc) {
-            host_name[0] = '\0';
-            host_port = 0;
-            log_error("unable to load host_port - rc: %d", rc);
-            return(0);
-        }
-    }
     return(host_port);
+}
+
+////////////////////////////////////////
+int set_host_port(const char *buf)
+{
+    if(is_str_empty(buf)) {
+        host_port = 0;
+        return(SUCCESS);
+    }
+
+    host_port = (atoi(buf) & 0xffff);
+
+    log_info("host port: %" PRIu16, host_port);
+
+    return(SUCCESS);
+}
+
+
+////////////////////////////////////////
+const char* get_iot_root_ca_path(void)
+{
+    return(iot_root_ca_path);
+}
+
+////////////////////////////////////////
+int set_iot_root_ca_path(const char *buf)
+{
+    if(is_str_empty(buf)) {
+        iot_root_ca_path[0] = '\0';
+        return(SUCCESS);
+    }
+
+    if(strlen(buf) >= sizeof(iot_root_ca_path)) {
+        log_error("insufficient buffer");
+        return(ERROR_INSUFFICIENT_BUFFER);
+    }
+
+    strncpy(iot_root_ca_path, buf, sizeof(iot_root_ca_path));
+
+    log_info("iot root ca path: %s", iot_root_ca_path);
+
+    return(SUCCESS);
+}
+
+
+////////////////////////////////////////
+const char* get_iot_cert_path(void)
+{
+    return(iot_cert_path);
+}
+
+////////////////////////////////////////
+int set_iot_cert_path(const char *buf)
+{
+    if(is_str_empty(buf)) {
+        iot_cert_path[0] = '\0';
+        return(SUCCESS);
+    }
+
+    if(strlen(buf) >= sizeof(iot_cert_path)) {
+        log_error("insufficient buffer");
+        return(ERROR_INSUFFICIENT_BUFFER);
+    }
+
+    strncpy(iot_cert_path, buf, sizeof(iot_cert_path));
+
+    log_info("iot cert path: %s", iot_cert_path);
+
+    return(SUCCESS);
+}
+
+
+////////////////////////////////////////
+const char* get_iot_private_key_path(void)
+{
+    return(iot_private_key_path);
+}
+
+////////////////////////////////////////
+int set_iot_private_key_path(const char *buf)
+{
+    if(is_str_empty(buf)) {
+        iot_private_key_path[0] = '\0';
+        return(SUCCESS);
+    }
+
+    if(strlen(buf) >= sizeof(iot_private_key_path)) {
+        log_error("insufficient buffer");
+        return(ERROR_INSUFFICIENT_BUFFER);
+    }
+
+    strncpy(iot_private_key_path, buf, sizeof(iot_private_key_path));
+
+    log_info("iot private key path: %s", iot_private_key_path);
+
+    return(SUCCESS);
 }
 
 

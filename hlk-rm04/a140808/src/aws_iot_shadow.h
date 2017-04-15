@@ -25,7 +25,7 @@
 
 
 IoT_Error_t shadow_connect(const char *host_name, const uint16_t port, const char *thing_name,
-						   const char *root_ca, const char *certificate, const char *private_key);
+						   const char *root_ca_path, const char *cert_path, const char *private_key_path);
 IoT_Error_t shadow_disconnect(void);
 IoT_Error_t mqtt_subscribe(const char *topic);
 IoT_Error_t shadow_poll(void);

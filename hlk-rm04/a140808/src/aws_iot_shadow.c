@@ -346,7 +346,7 @@ void subscribe_callback(AWS_IoT_Client *pClient, char *topicName, uint16_t topic
 
 ////////////////////////////////////////
 IoT_Error_t shadow_connect(const char *host_name, const uint16_t port, const char *thing_name, 
-                           const char *root_ca, const char *certificate, const char *private_key)
+                           const char *root_ca_path, const char *cert_path, const char *private_key_path)
 {
     IOT_INFO("\nAWS IoT SDK Version %d.%d.%d-%s", VERSION_MAJOR, VERSION_MINOR, VERSION_PATCH, VERSION_TAG);
 
@@ -357,12 +357,12 @@ IoT_Error_t shadow_connect(const char *host_name, const uint16_t port, const cha
     sp.pHost = (char*)host_name;
     sp.port = port;
     // certs
-    IOT_DEBUG("rootCA: %s", root_ca);
-    IOT_DEBUG("certificate: %s", certificate);
-    IOT_DEBUG("private key: %s", private_key);
-    sp.pRootCA = (char*)root_ca;
-    sp.pClientCRT = (char*)certificate;
-    sp.pClientKey = (char*)private_key;
+    IOT_DEBUG("root ca: %s", root_ca_path);
+    IOT_DEBUG("certificate: %s", cert_path);
+    IOT_DEBUG("private key: %s", private_key_path);
+    sp.pRootCA = (char*)root_ca_path;
+    sp.pClientCRT = (char*)cert_path;
+    sp.pClientKey = (char*)private_key_path;
     sp.enableAutoReconnect = false;
     sp.disconnectHandler = NULL;
 

@@ -24,6 +24,7 @@
 #define max(a,b) ({ __typeof__ (a) _a = (a); __typeof__ (b) _b = (b); _a > _b ? _a : _b; })
 
 #define sleep_ms(ms) usleep((ms)*1000);
+#define is_str_empty(s) ((NULL==(s))||('\0'==(s)[0]))
 
 
 #endif // __util_h__

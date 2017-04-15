@@ -53,17 +53,94 @@ void sig_hup(int signum)
 
 
 ////////////////////////////////////////
-int main(int argc, char **argv)
-{
-    int opt;
-    while(-1 != (opt = getopt(argc, argv, "h"))) {
+//
+//  -h <host>
+//  -p <port>
+//  -r <root ca path>
+//  -c <cert path>
+//  -k <private key path>
+//
+int parse_args(int argc, char *const*argv) {
+    int rc, opt;
+    while (-1 != (opt = getopt(argc, argv, ":h:p:c:k:r:"))) {
         switch(opt) {
-            case 'h':  // help
-            default:
-                printf("usage: " APP_NAME " [option]\n\n");
-                printf("  -h        print this help\n\n");
-                return('h'==opt ? EXIT_SUCCESS : EXIT_FAILURE);
+        case 'h':
+            log_debug("parse_args host %s", optarg);
+            rc = set_host_name(optarg);
+            if(SUCCESS != rc) {
+                log_error("failed to set host name");
+                return(rc);
+            }
+            break;
+        case 'p':
+            log_debug("parse_args host port %s", optarg);
+            rc = set_host_port(optarg);
+            if(SUCCESS != rc) {
+                log_error("failed to set host port");
+                return(rc);
+            }
+            break;
+        case 'r':
+            log_debug("parse_args root ca path %s", optarg);
+            rc = set_iot_root_ca_path(optarg);
+            if(SUCCESS != rc) {
+                log_error("failed to set root ca path");
+                return(rc);
+            }
+            break;
+        case 'c':
+            log_debug("parse_args cert path %s", optarg);
+            rc = set_iot_cert_path(optarg);
+            if(SUCCESS != rc) {
+                log_error("failed to set cert path");
+                return(rc);
+            }
+            break;
+        case 'k':
+            log_debug("parse_args private key path %s", optarg);
+            rc = set_iot_private_key_path(optarg);
+            if(SUCCESS != rc) {
+                log_error("failed to set private key path");
+                return(rc);
+            }
+            break;
+        case ':':
+            log_error("option -%c requires an argument.", optopt);
+            return(ERROR_INVALID_ARG);
+        case '?':
+        default:
+            log_warn("invalid  -%c ignored", optopt);
         }
+    }
+
+    return(SUCCESS);
+}
+
+
+////////////////////////////////////////
+int main(int argc, char *const*argv)
+{
+    int rc = parse_args(argc, argv);
+    if(SUCCESS != rc) {
+        log_error("failed to parse command line, rc = %d", rc);
+        return(EXIT_FAILURE);
+    }
+
+    if(is_str_empty(get_host_name())) {
+        log_error("host name -h is required");
+        return(EXIT_FAILURE);
+    }
+    if(is_str_empty(get_iot_root_ca_path())) {
+        log_error("root ca path -r is required");
+        return(EXIT_FAILURE);
+    }
+    if(is_str_empty(get_iot_cert_path())) {
+        log_error("certificate path -c is required");
+        return(EXIT_FAILURE);
+    }
+    if(is_str_empty(get_iot_private_key_path())) {
+        log_error("private key path -k is required");
+        return(EXIT_FAILURE);
     }
 
     // signals
@@ -103,8 +180,8 @@ int main(int argc, char **argv)
     addrs; // TODO: report addresses
 
     // connect shadow
-    IoT_Error_t rc = shadow_connect(get_host_name(), get_host_port(), get_thing_name(),
-                                    ROOT_CA_FILEPATH, CERTIFICATE_FILEPATH, PRIVATE_KEY_FILEPATH);
+    rc = shadow_connect(get_host_name(), get_host_port(), get_thing_name(),
+                        get_iot_root_ca_path(), get_iot_cert_path(), get_iot_private_key_path());
     if(SUCCESS != rc) {
         log_error("shadow connect error: %d", rc);
         unlink(PID_FILEPATH);

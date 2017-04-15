@@ -20,8 +20,14 @@
 #define __error_h__
 
 
-#define FAILURE  -1
-#define SUCCESS   0
+#define SUCCESS                     0
+#define FAILURE                    -1
+#define ERROR_INVALID_ARG          -2
+#define ERROR_OUTOFMEMORY          -3
+#define ERROR_INSUFFICIENT_BUFFER  -4
+#define ERROR_FILE_NOT_FOUND       -5
+#define ERROR_FILE_READ            -6
+#define ERROR_FILE_SEEK            -7
 
 
 #endif // __error_h__
