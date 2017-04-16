@@ -69,8 +69,10 @@ define Package/a140808/install
 	$(INSTALL_BIN) ./files/thingname $(1)/usr/bin/
 
 	$(INSTALL_DIR) $(1)/etc/uci-defaults
-	sed -e "s/host='.*'/host='$(shell cat ./files/host.cfg || echo ' '    | awk -F: '{print $$1}')'/" \
-	    -e "s/port='.*'/port='$(shell cat ./files/host.cfg || echo '8883' | awk -F: '{print ($$2==0+$$2)?$$2:8883}')'/" \
+	$(eval HOST := $(shell cat ./files/host.cfg | awk -F: '{print $$1}'))
+	$(eval PORT := $(shell cat ./files/host.cfg | awk -F: '{print ($$2==0+$$2)?$$2:8883}'))
+	sed -e "s/host='.*'/host='$(shell [ -z $(HOST) ] && echo ' ' || echo $(HOST))'/" \
+	    -e "s/port='.*'/port='$(shell [ -z $(PORT) ] && echo '8883' || echo $(PORT))'/" \
 	    ./files/08_init_aws-iot_cfg > $(1)/etc/uci-defaults/08_init_aws-iot_cfg
 
 	$(INSTALL_DIR) $(1)/etc/aws-iot-certs
