@@ -31,6 +31,7 @@ key=$(uci get aws-iot.$thing_name.key)
 
 start_service() {
 	[ -z $host ] && exit 1
+	[ -z $port ] && port='8883'
 	[ -z $ca   ] && exit 2
 	[ -z $cert ] && exit 3
 	[ -z $key  ] && exit 4
