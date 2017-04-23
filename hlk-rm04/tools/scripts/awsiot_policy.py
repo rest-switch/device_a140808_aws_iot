@@ -97,7 +97,7 @@ if __name__ == '__main__':
     parser.add_argument('-a', '--attach', dest='cert_id',    metavar='<cert_id>',    help='attach policy for thing name to cert id (-t <thing_name>)')
     parser.add_argument('-c', '--create', dest='cert_id',    metavar='<cert_id>',    help='create and attach policy for thing name to cert id (-t <thing_name>)')
     parser.add_argument('-f', '--find',   dest='find_cert',  metavar='<cert_id>',    help='find certificate arn by id')
-    parser.add_argument('-l', '--list',   dest='list_certs', metavar='chars=8',    help='list iot certificates', nargs='?',type=int,const=8)
+    parser.add_argument('-l', '--list',   dest='list_certs', metavar='chars=8',      help='list iot certificates', nargs='?',type=int,const=8)
     parser.add_argument('-n', '--new',    dest='new_cert',   action='store_true',    help='create new certificate and pub/priv keypair')
     parser.add_argument('-t', '--thing',  dest='thing_name', metavar='<thing_name>', help='thing name')
     args = parser.parse_args()
