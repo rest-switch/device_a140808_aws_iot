@@ -1,14 +1,17 @@
-From daa81fa003ccb5c6787fb4cdb1f5e356c78e11fb Mon Sep 17 00:00:00 2001
+From f92f3dd92eb6376e8871c511c4416ddc5b12eb59 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
-Date: Tue, 4 Apr 2017 22:06:36 -0400
+Date: Mon, 24 Apr 2017 17:12:45 -0400
 Subject: [PATCH 2/3] configure station mode and use dhcp for wired and
  wireless connections
 
 Signed-off-by: John Clark <inindev@gmail.com>
+
+stuff
 ---
  package/base-files/files/etc/config/network  | 28 ++++++++++++++++++++++++++++
  package/base-files/files/etc/config/wireless | 23 +++++++++++++++++++++++
- 2 files changed, 51 insertions(+)
+ package/base-files/files/etc/hosts           |  4 ----
+ 3 files changed, 51 insertions(+), 4 deletions(-)
  create mode 100644 package/base-files/files/etc/config/network
  create mode 100644 package/base-files/files/etc/config/wireless
 
@@ -75,6 +78,16 @@ index 0000000..abd0d48
 +	option encryption 'psk2'
 +	option key ''
 +
+diff --git a/package/base-files/files/etc/hosts b/package/base-files/files/etc/hosts
+index b7713eb..75721cd 100644
+--- a/package/base-files/files/etc/hosts
++++ b/package/base-files/files/etc/hosts
+@@ -1,5 +1 @@
+ 127.0.0.1 localhost
+-
+-::1     localhost ip6-localhost ip6-loopback
+-ff02::1 ip6-allnodes
+-ff02::2 ip6-allrouters
 -- 
 2.7.4
 

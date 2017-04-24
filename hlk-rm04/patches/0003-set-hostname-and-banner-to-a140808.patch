@@ -1,6 +1,6 @@
-From 448729362f689db966b6865238fae6b721ec8e95 Mon Sep 17 00:00:00 2001
+From b689fc2c3a381f33eb7f17ed48455f80db6a4a02 Mon Sep 17 00:00:00 2001
 From: John Clark <inindev@gmail.com>
-Date: Tue, 4 Apr 2017 22:07:27 -0400
+Date: Mon, 24 Apr 2017 17:17:06 -0400
 Subject: [PATCH 3/3] set hostname and banner to 'a140808'
 
 Signed-off-by: John Clark <inindev@gmail.com>
@@ -24,7 +24,7 @@ index 6230b08..b9ae616 100755
  		set system.@system[-1].ttylogin='0'
  		set system.@system[-1].log_size='64'
 diff --git a/package/base-files/files/etc/banner b/package/base-files/files/etc/banner
-index 4ec646a..2870469 100644
+index 4ec646a..05ddf4f 100644
 --- a/package/base-files/files/etc/banner
 +++ b/package/base-files/files/etc/banner
 @@ -1,10 +1,7 @@
